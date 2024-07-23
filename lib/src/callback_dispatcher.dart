@@ -61,7 +61,7 @@ void callbackDispatcher() {
             timestamp: null,
             monitorState: MonitorState.values.firstWhere((state) => state.id == data['state']) 
           );
-          callback?.call(locationInfo, beaconInfo);
+          callback?.call(locationInfo, beaconInfo, ServiceEvents.Monitor);
         }
       } else if(call.method == ServiceEvents.Location.name){
         final json = call.arguments as Map;
@@ -91,7 +91,7 @@ void callbackDispatcher() {
             lat: data['lat'] as double?,
             lng: data['lng'] as double?,
           );
-          callback?.call(locationInfo, beaconInfo);
+          callback?.call(locationInfo, beaconInfo, ServiceEvents.Location);
         }
       }
     })
