@@ -25,11 +25,13 @@ ProximityState getProximityState(double val) {
 }
 
 enum MonitorState{
-  Exit(0),
-  Enter(1);
+  Exit(0, 'Exit'),
+  Enter(1, 'Enter');
 
-  const MonitorState(this.id);
+  const MonitorState(this.id, this.name);
 
   ///id
   final int id;
+  //name
+  final String name;
 }

@@ -47,6 +47,9 @@ class BeaconService: Service()  {
         private val _locationLiveData = MutableLiveData<Pair<Double?, Double?>>()
         val locationLiveData: LiveData<Pair<Double?, Double?>> = _locationLiveData
 
+        private val _beaconLiveData = MutableLiveData<HashMap<String, Any?>>()
+        val beaconLiveData: LiveData<HashMap<String, Any?>> = _beaconLiveData
+
         val statusLiveData = MutableLiveData<String>()
 
         const val UNIQUE_ID = "iBeacon-1"
@@ -54,6 +57,7 @@ class BeaconService: Service()  {
         const val TAG = "beacon_receiver_nex"
         const val IBEACON_FORMAT = "m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24"
         const val UUID = "D30A3941-35F9-D31A-215B-1EACF2DADB8B"
+//        const val UUID = "a0902400-b2d6-5635-99c7-e0c113e17a03"
 
         const val UPDATE_INTERVAL_IN_MILLISECONDS: Long = 1000
 
@@ -314,6 +318,9 @@ class BeaconService: Service()  {
 
                 Handler(looper!!).post {
                     methodChannel!!.invokeMethod(event.code, args)
+                    if(event == ServiceEvents.Monitor){
+                        _beaconLiveData.value = value
+                    }
                 }
             }
         }

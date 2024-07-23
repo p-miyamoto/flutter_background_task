@@ -28,6 +28,7 @@ import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.Observer
+import com.neverjp.background_task.lib.BeaconEventStreamHandler
 import com.neverjp.background_task.lib.BgEventStreamHandler
 import com.neverjp.background_task.lib.ChannelName
 import com.neverjp.background_task.lib.StatusEventStreamHandler
@@ -40,6 +41,7 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
+import org.altbeacon.beacon.Beacon
 
 /** BackgroundTaskPlugin */
 class BackgroundTaskPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, PluginRegistry.RequestPermissionsResultListener {
@@ -49,6 +51,7 @@ class BackgroundTaskPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plu
   private var activity: Activity? = null
   private var bgEventChannel: EventChannel? = null
   private var statusEventChannel: EventChannel? = null
+  private var beaconEventChannel: EventChannel? = null
   private var dispatcherRawHandle: Long? = null
   private var handlerRawHandle: Long? = null
   private val isEnabledEvenIfKilled: Boolean
@@ -72,6 +75,9 @@ class BackgroundTaskPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plu
 
     statusEventChannel = EventChannel(messenger, ChannelName.STATUS_EVENT.value)
     statusEventChannel?.setStreamHandler(StatusEventStreamHandler())
+
+    beaconEventChannel = EventChannel(messenger, ChannelName.BEACON_EVENT.value)
+    beaconEventChannel?.setStreamHandler(BeaconEventStreamHandler())
   }
 
   @RequiresApi(Build.VERSION_CODES.O)
@@ -161,6 +167,7 @@ class BackgroundTaskPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plu
     if (isEnabledEvenIfKilled) {
       LocationUpdatesService.locationLiveData.removeObserver(locationObserver)
       LocationUpdatesService.statusLiveData.removeObserver(statusObserver)
+      BeaconService.beaconLiveData.removeObserver(beaconObserver)
     } else {
       stopLocationService()
     }
@@ -200,6 +207,10 @@ class BackgroundTaskPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plu
     StatusEventStreamHandler.eventSink?.success(it)
   }
 
+  private val beaconObserver = Observer<HashMap<String, Any?>> {
+    BeaconEventStreamHandler.eventSink?.success(it)
+  }
+
   private fun startLocationService() {
     if (!checkPermissions()) {
       requestPermissions()
@@ -234,7 +245,7 @@ class BackgroundTaskPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plu
     context!!.stopService(intent)
 
     BeaconService.locationLiveData.observeForever(locationObserver)
-    BeaconService.statusLiveData.observeForever(statusObserver)
+    BeaconService.beaconLiveData.observeForever(beaconObserver)
 
     context!!.startService(intent)
   }
@@ -244,7 +255,7 @@ class BackgroundTaskPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plu
     context!!.stopService(intent)
     BeaconService.statusLiveData.value = StatusEventStreamHandler.StatusType.Stop.value
     BeaconService.locationLiveData.removeObserver(locationObserver)
-    BeaconService.statusLiveData.removeObserver(statusObserver)
+    BeaconService.beaconLiveData.removeObserver(beaconObserver)
   }
 
   private fun checkPermissions(): Boolean {

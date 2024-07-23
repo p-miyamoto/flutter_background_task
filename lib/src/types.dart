@@ -49,6 +49,7 @@ enum ChannelName {
   methods('com.neverjp.background_task/methods'),
   bgEvent('com.neverjp.background_task/bgEvent'),
   statusEvent('com.neverjp.background_task/statusEvent'),
+  beaconEvent('com.neverjp.background_task/beaconEvent'),
   ;
 
   const ChannelName(this.value);
