@@ -87,6 +87,22 @@ class BackgroundTask {
     await _methodChannel.invokeMethod<bool>('stop_background_task');
   }
 
+  Future<void> startBeacon({
+    double? distanceFilter,
+    bool isEnabledEvenIfKilled = true,
+    DesiredAccuracy iOSDesiredAccuracy = DesiredAccuracy.bestForNavigation,
+  }) async {
+    await _methodChannel.invokeMethod<bool>('start_beacon_task',      {
+        'distanceFilter': distanceFilter,
+        'isEnabledEvenIfKilled': isEnabledEvenIfKilled,
+        'iOSDesiredAccuracy': iOSDesiredAccuracy.value,
+      },);
+  }
+
+  Future<void> stopBeacon() async {
+    await _methodChannel.invokeMethod<bool>('stop_beacon_task');
+  }
+
   /// `isRunning` returns whether the background task is running or not.
   Future<bool> get isRunning async {
     final result =

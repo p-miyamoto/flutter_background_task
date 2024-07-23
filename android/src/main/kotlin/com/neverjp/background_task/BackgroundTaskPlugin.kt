@@ -133,7 +133,7 @@ class BackgroundTaskPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plu
           startBeaconService()
           result.success(true)
         }
-        "stop_beacon_tasl" ->{
+        "stop_beacon_task" ->{
           stopBeaconService()
           result.success(true)
         }
