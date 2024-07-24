@@ -1,26 +1,26 @@
 /**
-Copyright [2024] [Never Inc.]
-Copyright [2019] [Ali Almoullim]
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-   http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
+ Copyright [2024] [Never Inc.]
+ Copyright [2019] [Ali Almoullim]
+ 
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+ 
+ http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+ */
 
 import Flutter
 import UIKit
 import CoreLocation
 
 public class BackgroundTaskPlugin: NSObject, FlutterPlugin, CLLocationManagerDelegate {
-
+    
     public static let dispatchEngine: FlutterEngine = FlutterEngine(
         name: Bundle.main.bundleIdentifier ?? "background_task",
         project: nil,
@@ -33,11 +33,19 @@ public class BackgroundTaskPlugin: NSObject, FlutterPlugin, CLLocationManagerDel
     static var channel: FlutterMethodChannel?
     static var bgEventChannel: FlutterEventChannel?
     static var statusEventChannel: FlutterEventChannel?
+    static var beaconEventChannel: FlutterEventChannel?
     static var isRunning = false
     
     static var dispatchChannel: FlutterMethodChannel?
     static var dispatcherRawHandle: Int?
     static var handlerRawHandle: Int?
+    
+    static var beaconRegion:CLBeaconRegion?
+    static var UUIDList = [
+        "D30A3941-35F9-D31A-215B-1EACF2DADB8B"
+    ]
+    
+    var beacons: [Any] = []
     
     private var isEnabledEvenIfKilled: Bool {
         return UserDefaultsRepository.instance.fetchIsEnabledEvenIfKilled()
@@ -74,7 +82,7 @@ public class BackgroundTaskPlugin: NSObject, FlutterPlugin, CLLocationManagerDel
             }
         }
     }
-
+    
     public static func register(with registrar: FlutterPluginRegistrar) {
         let instance = BackgroundTaskPlugin()
         registrar.addApplicationDelegate(instance)
@@ -91,8 +99,12 @@ public class BackgroundTaskPlugin: NSObject, FlutterPlugin, CLLocationManagerDel
         let statusEventChannel = FlutterEventChannel(name: ChannelName.statusEvent.value, binaryMessenger: registrar.messenger())
         statusEventChannel.setStreamHandler(StatusEventStreamHandler())
         BackgroundTaskPlugin.statusEventChannel = statusEventChannel
+        
+        let beaconEventChannel = FlutterEventChannel(name: ChannelName.beaconEvent.value, binaryMessenger: registrar.messenger())
+        beaconEventChannel.setStreamHandler(BeaconEventStreamHandler())
+        BackgroundTaskPlugin.beaconEventChannel = beaconEventChannel
     }
-
+    
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         if (call.method == "start_background_task") {
             let args = call.arguments as? Dictionary<String, Any>
@@ -120,7 +132,7 @@ public class BackgroundTaskPlugin: NSObject, FlutterPlugin, CLLocationManagerDel
             userDefaultsRepository.saveIsEnabledEvenIfKilled(isEnabledEvenIfKilled)
             
             registerDispatchEngine()
-          
+            
             let locationManager = CLLocationManager()
             locationManager.allowsBackgroundLocationUpdates = true
             locationManager.showsBackgroundLocationIndicator = true
@@ -156,6 +168,23 @@ public class BackgroundTaskPlugin: NSObject, FlutterPlugin, CLLocationManagerDel
             Self.handlerRawHandle = args?["callbackHandlerRawHandle"] as? Int
             debugPrint("registered \(String(describing: args))")
             result(true)
+        } else if (call.method == "start_beacon_task"){
+            for val in Self.UUIDList{
+                let uuid: NSUUID! = NSUUID(uuidString: val.lowercased())
+                let identifierStr = "No1"
+                Self.beaconRegion = CLBeaconRegion(uuid: uuid as UUID, identifier: identifierStr)
+                Self.beaconRegion!.notifyEntryStateOnDisplay = true;
+                Self.beaconRegion!.notifyOnEntry = true;
+                Self.beaconRegion!.notifyOnExit = true;
+                Self.locationManager!.startMonitoring(for: Self.beaconRegion!)
+                print("見つけます:" + val)
+            }
+            result(true)
+        } else if (call.method == "stop_beacon_task"){
+            for val in Self.UUIDList{
+                Self.locationManager!.stopMonitoring(for: Self.beaconRegion!)
+            }
+            result(true)
         }
     }
     
@@ -189,14 +218,14 @@ public class BackgroundTaskPlugin: NSObject, FlutterPlugin, CLLocationManagerDel
             Self.locationManager?.startMonitoringSignificantLocationChanges()
         }
     }
-
+    
     public func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
         let isEnabled = status == .authorizedAlways || status == .authorizedWhenInUse
         StatusEventStreamHandler.eventSink?(
             StatusEventStreamHandler.StatusType.permission(message: "\(isEnabled ? "enabled" : "disabled")").value
         )
     }
-
+    
     public func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         let lat = locations.last?.coordinate.latitude
         let lng = locations.last?.coordinate.longitude
@@ -207,13 +236,18 @@ public class BackgroundTaskPlugin: NSObject, FlutterPlugin, CLLocationManagerDel
             StatusEventStreamHandler.StatusType.updated(message: "lat:\(lat ?? 0) lng:\(lng ?? 0)").value
         )
         
-        let callbackHandlerRawHandle = UserDefaultsRepository.instance.fetchCallbackHandlerRawHandle()
-        let data = [
-            "callbackHandlerRawHandle": callbackHandlerRawHandle,
+        self.sendData(event: ServiceEvents.Location, value: [
             "lat": lat,
             "lng": lng
-        ] as [String : Any?]
-        Self.dispatchChannel?.invokeMethod("background_handler", arguments: data)
+        ])
+        
+        //        let callbackHandlerRawHandle = UserDefaultsRepository.instance.fetchCallbackHandlerRawHandle()
+        //        let data = [
+        //            "callbackHandlerRawHandle": callbackHandlerRawHandle,
+        //            "lat": lat,
+        //            "lng": lng
+        //        ] as [String : Any?]
+        //        Self.dispatchChannel?.invokeMethod("background_handler", arguments: data)
     }
     
     public func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
@@ -244,5 +278,64 @@ public class BackgroundTaskPlugin: NSObject, FlutterPlugin, CLLocationManagerDel
             Self.dispatchChannel = dispatchChannel
             Self.isRegisteredDispatchEngine = true
         }
+    }
+    
+    private func sendData(event: ServiceEvents, value: [String : Any?]){
+        let callbackHandlerRawHandle = UserDefaultsRepository.instance.fetchCallbackHandlerRawHandle()
+        let data = [
+            "callbackHandlerRawHandle": callbackHandlerRawHandle,
+            "data": value
+        ] as [String : Any?]
+        Self.dispatchChannel?.invokeMethod(event.getName(), arguments: data)
+        
+        
+        if(event == ServiceEvents.Monitor){
+            BeaconEventStreamHandler.eventSink?(
+                value
+            )
+        }
+    }
+    
+    public func locationManager(_ manager: CLLocationManager, didStartMonitoringFor region: CLRegion) {
+        print("見つけ:didStartMonitoringFor")
+        manager.requestState(for: region);
+    }
+    
+    public func locationManager(_ manager: CLLocationManager, didDetermineState state: CLRegionState, for region: CLRegion) {
+        switch (state) {
+        case .inside:
+            print("見つかり:inside")
+            self.sendData(event: ServiceEvents.Monitor, value:                 [
+                "region" : (region as! CLBeaconRegion).uuid.uuidString,
+                "state"  : 1
+            ])
+            break;
+        case .outside:
+            print("見つから:outside")
+            self.sendData(event: ServiceEvents.Monitor, value:                 [
+                "region" : (region as! CLBeaconRegion).uuid.uuidString,
+                "state"  : 0
+            ])
+            break;
+        case .unknown:
+            print("iBeacon unknown")
+            break;
+        }
+    }
+    
+    public func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
+        print("見つかり:didEnterRegion")
+        self.sendData(event: ServiceEvents.Monitor, value:                 [
+            "region" : (region as! CLBeaconRegion).uuid.uuidString,
+            "state"  : 1
+        ])
+    }
+    
+    public func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
+        print("見つから:didExitRegion")
+        self.sendData(event: ServiceEvents.Monitor, value:                 [
+            "region" : (region as! CLBeaconRegion).uuid.uuidString,
+            "state"  : 0
+        ])
     }
 }
