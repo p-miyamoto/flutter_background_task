@@ -125,6 +125,7 @@ class BackgroundTaskPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plu
         "start_beacon_task" -> {
           val distanceFilter = call.argument<Double>(LocationUpdatesService.distanceFilterKey)
           val isEnabledEvenIfKilled = call.argument<Boolean>("isEnabledEvenIfKilled") ?: false
+          val uuid = call.argument<String>("uuid") ?: ""
 
           pref.edit().apply {
             remove(LocationUpdatesService.callbackDispatcherRawHandleKey)
@@ -136,7 +137,7 @@ class BackgroundTaskPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plu
             putFloat(LocationUpdatesService.distanceFilterKey, distanceFilter?.toFloat() ?: 0.0.toFloat())
             putBoolean(LocationUpdatesService.isEnabledEvenIfKilledKey, isEnabledEvenIfKilled)
           }.apply()
-          startBeaconService()
+          startBeaconService(uuid)
           result.success(true)
         }
         "stop_beacon_task" ->{
@@ -236,7 +237,7 @@ class BackgroundTaskPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plu
     LocationUpdatesService.statusLiveData.removeObserver(statusObserver)
   }
 
-  private fun startBeaconService() {
+  private fun startBeaconService(uuid: String) {
     if (!checkPermissions()) {
       requestPermissions()
     }
@@ -246,6 +247,8 @@ class BackgroundTaskPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plu
 
     BeaconService.locationLiveData.observeForever(locationObserver)
     BeaconService.beaconLiveData.observeForever(beaconObserver)
+
+    intent.putExtra("uuid", uuid)
 
     context!!.startService(intent)
   }

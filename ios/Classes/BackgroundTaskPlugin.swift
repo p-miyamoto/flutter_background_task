@@ -169,6 +169,10 @@ public class BackgroundTaskPlugin: NSObject, FlutterPlugin, CLLocationManagerDel
             debugPrint("registered \(String(describing: args))")
             result(true)
         } else if (call.method == "start_beacon_task"){
+            let args = call.arguments as? Dictionary<String, Any>
+            let setUuid = (args?["uuid"] as? String) ?? ""
+            Self.UUIDList[0] = setUuid
+            
             for val in Self.UUIDList{
                 let uuid: NSUUID! = NSUUID(uuidString: val.lowercased())
                 let identifierStr = "No1"

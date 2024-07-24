@@ -90,12 +90,15 @@ class BackgroundTask {
     await _methodChannel.invokeMethod<bool>('stop_background_task');
   }
 
-  Future<void> startBeacon({
+  Future<void> startBeacon(
+    String uuid,
+  {
     double? distanceFilter,
     bool isEnabledEvenIfKilled = true,
     DesiredAccuracy iOSDesiredAccuracy = DesiredAccuracy.bestForNavigation,
   }) async {
     await _methodChannel.invokeMethod<bool>('start_beacon_task',      {
+        'uuid': uuid,
         'distanceFilter': distanceFilter,
         'isEnabledEvenIfKilled': isEnabledEvenIfKilled,
         'iOSDesiredAccuracy': iOSDesiredAccuracy.value,

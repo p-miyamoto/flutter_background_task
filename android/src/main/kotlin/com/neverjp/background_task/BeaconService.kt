@@ -56,7 +56,7 @@ class BeaconService: Service()  {
         const val CHANNEL_ID = "foreground_service"
         const val TAG = "beacon_receiver_nex"
         const val IBEACON_FORMAT = "m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24"
-        const val UUID = "D30A3941-35F9-D31A-215B-1EACF2DADB8B"
+        var UUID = "D30A3941-35F9-D31A-215B-1EACF2DADB8B"
 //        const val UUID = "a0902400-b2d6-5635-99c7-e0c113e17a03"
 
         const val UPDATE_INTERVAL_IN_MILLISECONDS: Long = 1000
@@ -70,11 +70,15 @@ class BeaconService: Service()  {
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    override fun onCreate() {
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        super.onStartCommand(intent, flags, startId)
+
+        UUID = intent!!.getStringExtra("uuid")!!
         looper = Looper.myLooper()
         pref = applicationContext.getSharedPreferences(PREF_FILE_NAME, Context.MODE_PRIVATE)
         //ビーコンの取得処理を開始
         startBeaconMonitor()
+        return START_STICKY
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -282,11 +286,6 @@ class BeaconService: Service()  {
 
     override fun onBind(intent: Intent?): IBinder {
         return binder
-    }
-
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        super.onStartCommand(intent, flags, startId)
-        return START_STICKY
     }
 
     override fun onDestroy() {
