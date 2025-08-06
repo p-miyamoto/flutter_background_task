@@ -78,6 +78,8 @@ class BeaconService: Service()  {
         pref = applicationContext.getSharedPreferences(PREF_FILE_NAME, Context.MODE_PRIVATE)
         //ビーコンの取得処理を開始
         startBeaconMonitor()
+//        initHandler()
+//        startLocationService()
         return START_STICKY
     }
 
@@ -122,7 +124,7 @@ class BeaconService: Service()  {
                 "region" to region.toString()
             ))
             //入を検知したため位置情報の取得を開始
-            startLocationService()
+//            startLocationService()
         }
         //ビーコンの出を検知
         override fun didExitRegion(region: Region?) {
@@ -132,7 +134,7 @@ class BeaconService: Service()  {
                 "region" to region.toString()
             ))
             //出を検知したため位置情報の取得を停止
-            stopLocationService()
+//            stopLocationService()
         }
         //ビーコンの入出状態が変更されたことを検知
         override fun didDetermineStateForRegion(state: Int, region: Region?) {
@@ -141,6 +143,10 @@ class BeaconService: Service()  {
                 "state" to state,
                 "region" to region.toString()
             ))
+
+            if(!isRunning){
+                startLocationService()
+            }
         }
     }
 
@@ -241,7 +247,7 @@ class BeaconService: Service()  {
 
     private fun createRequest(distanceFilter: Float): LocationRequest =
         LocationRequest.Builder(
-            Priority.PRIORITY_BALANCED_POWER_ACCURACY,
+            Priority.PRIORITY_HIGH_ACCURACY,
             UPDATE_INTERVAL_IN_MILLISECONDS
         ).apply {
             setMinUpdateDistanceMeters(distanceFilter)

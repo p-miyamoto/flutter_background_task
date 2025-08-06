@@ -87,7 +87,7 @@ class LocationUpdatesService: Service() {
         var NOTIFICATION_ICON = "@mipmap/ic_launcher"
         private const val PACKAGE_NAME =
             "com.google.android.gms.location.sample.locationupdatesforegroundservice"
-        private const val CHANNEL_ID = "background_task_channel_01"
+        private const val CHANNEL_ID = "foreground_service"
         private const val EXTRA_STARTED_FROM_NOTIFICATION = "$PACKAGE_NAME.started_from_notification"
 
         private const val NOTIFICATION_ID = 373737
@@ -114,7 +114,7 @@ class LocationUpdatesService: Service() {
             } else {
                 PendingIntent.getActivity(this, 1, intent, PendingIntent.FLAG_UPDATE_CURRENT)
             }
-            val builder = NotificationCompat.Builder(this, "BackgroundTaskLocation")
+            val builder = NotificationCompat.Builder(this, "foreground_service")
                 .setContentTitle(NOTIFICATION_TITLE)
                 .setOngoing(true)
                 .setSound(null)

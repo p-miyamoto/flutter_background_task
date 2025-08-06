@@ -26,7 +26,7 @@ void backgroundHandler(Location data) {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await BackgroundTask.instance.setBackgroundHandler(backgroundHandler);
+  // await BackgroundTask.instance.setBackgroundHandler(backgroundHandler);
   await IsarRepository.configure();
   await initializeDateFormatting('ja_JP');
   runApp(const MyApp());

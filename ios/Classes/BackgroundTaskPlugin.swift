@@ -139,6 +139,7 @@ public class BackgroundTaskPlugin: NSObject, FlutterPlugin, CLLocationManagerDel
             locationManager.pausesLocationUpdatesAutomatically = false
             locationManager.desiredAccuracy = desiredAccuracy.kCLLocation
             locationManager.distanceFilter = distanceFilter
+            locationManager.activityType = CLActivityType.automotiveNavigation
             locationManager.delegate = self
             locationManager.requestAlwaysAuthorization()
             if (isEnabledEvenIfKilled) {

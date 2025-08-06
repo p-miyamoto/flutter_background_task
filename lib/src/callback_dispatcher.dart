@@ -24,7 +24,18 @@ void callbackDispatcher() {
             lat: json['lat'] as double?,
             lng: json['lng'] as double?,
           );
-          callback?.call(data);
+          const beaconInfo = (
+            uuid: null as String?,
+            major: null as String?,
+            minor: null as String?,
+            proximity: null as ProximityState?,
+            distance: null as String?,
+            rssi: null as String?,
+            txpower: null as String?,
+            timestamp: null as String?,
+            monitorState: null as MonitorState?,
+          );
+          callback?.call(data, beaconInfo, ServiceEvents.Location);
         }
       } else if(call.method == ServiceEvents.Monitor.name){
         final json = call.arguments as Map;
